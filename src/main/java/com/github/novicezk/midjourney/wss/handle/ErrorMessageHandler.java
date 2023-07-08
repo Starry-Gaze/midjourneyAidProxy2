@@ -2,6 +2,7 @@ package com.github.novicezk.midjourney.wss.handle;
 
 import cn.hutool.core.text.CharSequenceUtil;
 import com.github.novicezk.midjourney.enums.MessageType;
+import com.github.novicezk.midjourney.enums.TaskAction;
 import com.github.novicezk.midjourney.support.Task;
 import com.github.novicezk.midjourney.support.TaskCondition;
 import lombok.extern.slf4j.Slf4j;
@@ -50,12 +51,21 @@ public class ErrorMessageHandler extends MessageHandler {
 		Task targetTask = null;
 		if (CharSequenceUtil.startWith(footerText, "/imagine ")) {
 			String finalPrompt = CharSequenceUtil.subAfter(footerText, "/imagine ", false);
-			targetTask = this.taskQueueHelper.findRunningTask(new TaskCondition().setFinalPromptEn(finalPrompt))
-					.findFirst().orElse(null);
+			if (CharSequenceUtil.contains(finalPrompt, "https://")) {
+				// 有可能为blend操作
+				String taskId = this.discordHelper.findTaskIdWithCdnUrl(finalPrompt.split(" ")[0]);
+				if (taskId != null) {
+					targetTask = this.taskQueueHelper.getRunningTask(taskId);
+				}
+			}
+			if (targetTask == null) {
+				targetTask = this.taskQueueHelper.findRunningTask(t ->
+						t.getAction() == TaskAction.IMAGINE && finalPrompt.startsWith(t.getPromptEn()))
+						.findFirst().orElse(null);
+			}
 		} else if (CharSequenceUtil.startWith(footerText, "/describe ")) {
 			String imageUrl = CharSequenceUtil.subAfter(footerText, "/describe ", false);
-			int hashStartIndex = imageUrl.lastIndexOf("/");
-			String taskId = CharSequenceUtil.subBefore(imageUrl.substring(hashStartIndex + 1), ".", true);
+			String taskId = this.discordHelper.findTaskIdWithCdnUrl(imageUrl);
 			targetTask = this.taskQueueHelper.getRunningTask(taskId);
 		}
 		if (targetTask == null) {

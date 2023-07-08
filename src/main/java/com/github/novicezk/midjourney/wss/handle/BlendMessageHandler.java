@@ -51,8 +51,7 @@ public class BlendMessageHandler extends MessageHandler {
 					return;
 				}
 				String url = getRealUrl(urls.get(0));
-				int hashStartIndex = url.lastIndexOf("/");
-				String taskId = CharSequenceUtil.subBefore(url.substring(hashStartIndex + 1), ".", true);
+				String taskId = this.discordHelper.findTaskIdWithCdnUrl(url);
 				TaskCondition condition = new TaskCondition()
 						.setId(taskId)
 						.setActionSet(Set.of(TaskAction.BLEND))
@@ -101,7 +100,7 @@ public class BlendMessageHandler extends MessageHandler {
 	@Override
 	public void handle(MessageType messageType, Message message) {
 		String content = message.getContentRaw();
-		boolean match = CharSequenceUtil.startWith(content, "**<https://s.mj.run/") || (message.getInteraction() != null && "blend".equals(message.getInteraction().getName()));
+		boolean match = CharSequenceUtil.startWith(content, "**<" + DiscordHelper.SIMPLE_URL_PREFIX) || (message.getInteraction() != null && "blend".equals(message.getInteraction().getName()));
 		if (!match) {
 			return;
 		}
@@ -117,8 +116,7 @@ public class BlendMessageHandler extends MessageHandler {
 					return;
 				}
 				String url = getRealUrl(urls.get(0));
-				int hashStartIndex = url.lastIndexOf("/");
-				String taskId = CharSequenceUtil.subBefore(url.substring(hashStartIndex + 1), ".", true);
+				String taskId = this.discordHelper.findTaskIdWithCdnUrl(url);
 				TaskCondition condition = new TaskCondition()
 						.setId(taskId)
 						.setActionSet(Set.of(TaskAction.BLEND))
